@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"strconv"
 )
 
 var dumpDelimiter = "------------------------------"
@@ -22,7 +23,7 @@ func (p Proxy) Listen() error {
 		handleRequest(w, r, p)
 	})
 
-	err := http.ListenAndServe(":8082", nil)
+	err := http.ListenAndServe(":" + strconv.Itoa(p.Port), nil)
 	if err != nil {
 		return err
 	}
