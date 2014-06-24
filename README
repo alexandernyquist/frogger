@@ -1,18 +1,3 @@
-Sample usage:
-
-    package main
-
-    import(
-        "fmt"
-        "github.com/alexandernyquist/frogger"
-    )
-
-    func main() {
-        proxy := frogger.Proxy{8082}
-        err := proxy.Listen()
-        if err != nil {
-            fmt.Println("Could not listen on port 8082. Port probably already in use.")
-        }
-        
-        // Proxy is now listening on :8082
-    }
+Use frogger to dump all responses from a specific set of hosts. Example:
+    
+    frogger.exe -port 8082 -dump assets-cdn.github.com -dump www.google-analytics.com
