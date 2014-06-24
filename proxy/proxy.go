@@ -5,19 +5,20 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/url"
 	"net/http"
+	"net/url"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
-var dumpDelimiter = "------------------------------"
+const dumpDelimiter = "------------------------------"
+
 var headersNotForwarded = []string{"Host", "Content-Length", "Connection", "Proxy-Connection", "Accept-Encoding"}
 var mimeTypeExtensions = map[string]string{
-	"text/html": "html",
+	"text/html":       "html",
 	"text/javascript": "js",
-	"text/css": "css",
+	"text/css":        "css",
 }
 
 type Proxy struct {
@@ -34,7 +35,7 @@ func (p Proxy) Listen() error {
 		os.Mkdir("dumps", 0666)
 	}
 
-	err := http.ListenAndServe(":" + strconv.Itoa(p.Port), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(p.Port), nil)
 	if err != nil {
 		return err
 	}
@@ -42,6 +43,7 @@ func (p Proxy) Listen() error {
 	return nil
 }
 
+// Checks if we should dump responses from the specific host.
 func (p Proxy) shouldDump(host string) bool {
 	for _, h := range p.DumpHosts {
 		if h == host {
@@ -52,6 +54,7 @@ func (p Proxy) shouldDump(host string) bool {
 	return false
 }
 
+// Joins all headers into a human-friendly string.
 func joinHeaders(headers http.Header) string {
 	var result string
 
@@ -62,6 +65,8 @@ func joinHeaders(headers http.Header) string {
 	return result
 }
 
+// Guesses the file extension for a dump file. First off, we check the uri path.
+// If that's empty, we try to infer it from the content type.
 func dumpFileExtension(uri *url.URL, contentType string) string {
 	lastDot := strings.LastIndex(uri.Path, ".")
 	if lastDot > 0 {
@@ -74,7 +79,7 @@ func dumpFileExtension(uri *url.URL, contentType string) string {
 		}
 	}
 
-	return "na"
+	return ""
 }
 
 func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
@@ -107,10 +112,10 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		// Dump request to disk
 
 		// Create directory if not exists
-		os.Mkdir("dumps/" + host, 0666)
+		os.Mkdir("dumps/"+host, 0666)
 
 		// Write file to disk
-		f, err := ioutil.TempFile("dumps/" + host, host+"-")
+		f, err := ioutil.TempFile("dumps/"+host, host+"-")
 		if err != nil {
 			log.Fatalf("Error: %v", err)
 		}
@@ -126,13 +131,13 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		// Append dump info to bottom of dump file
 		fmt.Println("Type: %v", resp)
 		verbose := fmt.Sprintf("\n\n%s\n%s\n%s\n%s",
-			dumpDelimiter, req.URL.String(), resp.Proto + " " + resp.Status, joinHeaders(resp.Header))
+			dumpDelimiter, req.URL.String(), resp.Proto+" "+resp.Status, joinHeaders(resp.Header))
 		f.WriteString(verbose)
 
 		// Move file
 		f.Close()
 		extension := dumpFileExtension(req.URL, resp.Header.Get("Content-Type"))
-		os.Rename(f.Name(), f.Name() + "." + extension)
+		os.Rename(f.Name(), f.Name()+"."+extension)
 	} else {
 		// Write response directly
 		_, err = io.Copy(w, resp.Body)
