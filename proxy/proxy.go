@@ -1,9 +1,11 @@
 package frogger
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net/url"
 	"net/http"
 	"os"
 	"strings"
@@ -12,6 +14,11 @@ import (
 
 var dumpDelimiter = "------------------------------"
 var headersNotForwarded = []string{"Host", "Content-Length", "Connection", "Proxy-Connection", "Accept-Encoding"}
+var mimeTypeExtensions = map[string]string{
+	"text/html": "html",
+	"text/javascript": "js",
+	"text/css": "css",
+}
 
 type Proxy struct {
 	Port      int
@@ -22,6 +29,10 @@ func (p Proxy) Listen() error {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		handleRequest(w, r, p)
 	})
+
+	if len(p.DumpHosts) > 0 {
+		os.Mkdir("dumps", 0666)
+	}
 
 	err := http.ListenAndServe(":" + strconv.Itoa(p.Port), nil)
 	if err != nil {
@@ -49,6 +60,21 @@ func joinHeaders(headers http.Header) string {
 	}
 
 	return result
+}
+
+func dumpFileExtension(uri *url.URL, contentType string) string {
+	lastDot := strings.LastIndex(uri.Path, ".")
+	if lastDot > 0 {
+		return uri.Path[lastDot+1:]
+	}
+
+	for k, v := range mimeTypeExtensions {
+		if strings.HasPrefix(contentType, k) {
+			return v
+		}
+	}
+
+	return "na"
 }
 
 func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
@@ -81,10 +107,10 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		// Dump request to disk
 
 		// Create directory if not exists
-		os.Mkdir(host, 0666)
+		os.Mkdir("dumps/" + host, 0666)
 
 		// Write file to disk
-		f, err := ioutil.TempFile(host, host+"-")
+		f, err := ioutil.TempFile("dumps/" + host, host+"-")
 		if err != nil {
 			log.Fatalf("Error: %v", err)
 		}
@@ -98,10 +124,15 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		}
 
 		// Append dump info to bottom of dump file
-		f.WriteString("\n\n" + dumpDelimiter)
-		f.WriteString("\n" + req.URL.String())
-		f.WriteString("\n" + resp.Proto + " " + resp.Status)
-		f.WriteString("\n" + joinHeaders(resp.Header))
+		fmt.Println("Type: %v", resp)
+		verbose := fmt.Sprintf("\n\n%s\n%s\n%s\n%s",
+			dumpDelimiter, req.URL.String(), resp.Proto + " " + resp.Status, joinHeaders(resp.Header))
+		f.WriteString(verbose)
+
+		// Move file
+		f.Close()
+		extension := dumpFileExtension(req.URL, resp.Header.Get("Content-Type"))
+		os.Rename(f.Name(), f.Name() + "." + extension)
 	} else {
 		// Write response directly
 		_, err = io.Copy(w, resp.Body)
