@@ -91,6 +91,7 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 	}
 
 	// Request actual page
+	req.Header.Set("Cache-Control", "no-cache")
 	clientReq := &http.Request{Method: "GET", URL: req.URL, Header: req.Header}
 	tr := &http.Transport{}
 	resp, err := tr.RoundTrip(clientReq)
