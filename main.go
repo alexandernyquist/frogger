@@ -20,10 +20,12 @@ func (s *stringArgs) Set(value string) error {
 func main() {
 	var dumpHosts stringArgs
 	portFlag := flag.Int("port", 8082, "Port to listen on")
+	noCacheFlag := flag.Bool("nocache", false, "Disable caching")
+
 	flag.Var(&dumpHosts, "dump", "Hosts to dump")
 	flag.Parse()
 
-	proxy := frogger.Proxy{*portFlag, dumpHosts}
+	proxy := frogger.Proxy{*portFlag, dumpHosts, *noCacheFlag}
 
 	fmt.Printf("Serving frogger on :%d\n", *portFlag)
 	err := proxy.Listen()

@@ -24,6 +24,7 @@ var mimeTypeExtensions = map[string]string{
 type Proxy struct {
 	Port      int
 	DumpHosts []string
+	NoCache bool
 }
 
 func (p Proxy) Listen() error {
@@ -91,7 +92,10 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 	}
 
 	// Request actual page
-	req.Header.Set("Cache-Control", "no-cache")
+	if p.NoCache {
+		req.Header.Set("If-Modified-Since", "Wed, 11 Jan 1984 08:00:00 GMT")	
+	}
+	
 	clientReq := &http.Request{Method: "GET", URL: req.URL, Header: req.Header}
 	tr := &http.Transport{}
 	resp, err := tr.RoundTrip(clientReq)
@@ -130,7 +134,6 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		}
 
 		// Append dump info to bottom of dump file
-		fmt.Println("Type: %v", resp)
 		verbose := fmt.Sprintf("\n\n%s\n%s\n%s\n%s",
 			dumpDelimiter, req.URL.String(), resp.Proto+" "+resp.Status, joinHeaders(resp.Header))
 		f.WriteString(verbose)
