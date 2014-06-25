@@ -3,7 +3,7 @@ Use frogger to dump all responses from a specific set of hosts.
 ## Example
 1. Start frogger:
 
-    frogger.exe -port 8082 -dump assets-cdn.github.com -dump www.google-analytics.com
+    frogger.exe -port 8082 -dump assets-cdn.github.com -dump www.google-analytics.com -dump *.googleusercontent.com
 
 2. Configure your browser to use frogger as a proxy.
 

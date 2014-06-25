@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"regexp"
 )
 
 const dumpDelimiter = "------------------------------"
@@ -50,6 +51,13 @@ func (p Proxy) shouldDump(host string) bool {
 		if h == host {
 			return true
 		}
+
+		// Check for wildcard match
+		pattern := "^" + h + "$"
+		match, _ := regexp.MatchString(pattern, host)
+		if match {
+			return true
+		}
 	}
 
 	return false
@@ -84,7 +92,7 @@ func dumpFileExtension(uri *url.URL, contentType string) string {
 }
 
 func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
-	log.Println("Incoming request to " + req.URL.String())
+	//log.Println("Incoming request to " + req.URL.String())
 
 	// Delete headers that proxy should not forward
 	for _, h := range headersNotForwarded {
@@ -146,7 +154,8 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		// Write response directly
 		_, err = io.Copy(w, resp.Body)
 		if err != nil {
-			log.Fatal("Could not write to response: %v", err)
+			fmt.Println(w)
+			log.Println("Could not write to response: ", err)
 		}
 	}
 }
