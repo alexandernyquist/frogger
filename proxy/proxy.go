@@ -26,6 +26,7 @@ type Proxy struct {
 	Port      int
 	DumpHosts []string
 	NoCache bool
+	DumpHeaders bool
 }
 
 func (p Proxy) Listen() error {
@@ -142,9 +143,11 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		}
 
 		// Append dump info to bottom of dump file
-		verbose := fmt.Sprintf("\n\n%s\n%s\n%s\n%s",
-			dumpDelimiter, req.URL.String(), resp.Proto+" "+resp.Status, joinHeaders(resp.Header))
-		f.WriteString(verbose)
+		if p.DumpHeaders {
+			verbose := fmt.Sprintf("\n\n%s\n%s\n%s\n%s",
+				dumpDelimiter, req.URL.String(), resp.Proto+" "+resp.Status, joinHeaders(resp.Header))
+			f.WriteString(verbose)
+		}
 
 		// Move file
 		f.Close()
