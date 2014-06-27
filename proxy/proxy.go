@@ -24,8 +24,9 @@ var mimeTypeExtensions = map[string]string{
 
 type Proxy struct {
 	Port      int
-	DumpHosts []string
 	NoCache bool
+	DumpAll bool
+	DumpHosts []string
 	DumpHeaders bool
 }
 
@@ -122,7 +123,7 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 	w.WriteHeader(resp.StatusCode)
 
 	host := req.URL.Host
-	if p.shouldDump(host) {
+	if p.DumpAll || p.shouldDump(host) {
 		// Dump request to disk
 
 		// Create directory if not exists
