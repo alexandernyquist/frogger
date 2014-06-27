@@ -140,7 +140,7 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 		writers := io.MultiWriter(f, w)
 		_, err = io.Copy(writers, resp.Body)
 		if err != nil {
-			log.Fatal("Could not write to dump file or response: %v", err)
+			log.Println("Could not write to dump file or response: %v", err)
 		}
 
 		// Append dump info to bottom of dump file
