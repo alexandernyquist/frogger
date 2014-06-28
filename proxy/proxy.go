@@ -8,25 +8,27 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
-	"regexp"
 )
 
 const dumpDelimiter = "------------------------------"
 
-var headersNotForwarded = []string{"Host", "Content-Length", "Connection", "Proxy-Connection", "Accept-Encoding"}
-var mimeTypeExtensions = map[string]string{
-	"text/html":       "html",
-	"text/javascript": "js",
-	"text/css":        "css",
-}
+var (
+	headersNotForwarded = []string{"Host", "Content-Length", "Connection", "Proxy-Connection", "Accept-Encoding"}
+	mimeTypeExtensions  = map[string]string{
+		"text/html":       "html",
+		"text/javascript": "js",
+		"text/css":        "css",
+	}
+)
 
 type Proxy struct {
-	Port      int
-	NoCache bool
-	DumpAll bool
-	DumpHosts []string
+	Port        int
+	NoCache     bool
+	DumpAll     bool
+	DumpHosts   []string
 	DumpHeaders bool
 }
 
@@ -103,9 +105,9 @@ func handleRequest(w http.ResponseWriter, req *http.Request, p Proxy) {
 
 	// Request actual page
 	if p.NoCache {
-		req.Header.Set("If-Modified-Since", "Wed, 11 Jan 1984 08:00:00 GMT")	
+		req.Header.Set("If-Modified-Since", "Wed, 11 Jan 1984 08:00:00 GMT")
 	}
-	
+
 	clientReq := &http.Request{Method: "GET", URL: req.URL, Header: req.Header}
 	tr := &http.Transport{}
 	resp, err := tr.RoundTrip(clientReq)
